@@ -8,4 +8,4 @@ app.listen(PORT, () => {
   console.log(`Keep building the future`);
 });
 
-module.exports = app;
+export default app;
