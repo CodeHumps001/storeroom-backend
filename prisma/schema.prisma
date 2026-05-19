@@ -11,4 +11,117 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+
+enum Role {
+  OWNER
+  CASHIER
+}
+
+enum OrganizationType{
+  RETAIL
+  WHOLESALE
+  PHARMACY
+  GROCERY
+  ELECTRONICS
+  OTHER
+
+}
+
+
+
+
+model Organization{
+  id  String @id @default(uuid())
+  organizationName String
+  organizationType OrganizationType
+  location String
+  contact String
+  createdAt  DateTime @default(now())
+
+  users User[]
+  products Product[]
+  categories Category[]
+  
+  sales Sale[]
+}
+
+model User{
+  id String @id @default(uuid())
+  name String
+  email String @unique
+  password String
+  role Role @default(CASHIER)
+
+  organizationId String
+  organization  Organization @relation(fields:[organizationId], references: [id]) 
+  sales Sale[]
+
+  createdAt DateTime @default(now())
+}
+
+model Product {
+  id        String   @id @default(uuid())
+  name      String
+  costPrice     Float
+  sellingPrice     Float
+  quantity  Int      @default(0)
+  createdAt DateTime @default(now())
+
+  organizationId   String
+  organization     Organization   @relation(fields: [organizationId], references: [id])
+
+  
+
+  categoryId String
+category   Category @relation(fields: [categoryId], references: [id])
+  saleItems SaleItem[]
+
+ 
+}
+
+
+model Category {
+  id   String @id @default(uuid())
+  name String
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  products Product[]
+}
+
+
+
+
+
+
+
+model Sale{
+  id           String       @id @default(uuid())
+  totalAmount Float
+  
+  createdAt DateTime @default(now())
+  items SaleItem[]
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  userId String
+user   User @relation(fields: [userId], references: [id])
+  
+}
+
+model SaleItem{
+  id String @id @default(uuid())
+  quantity Int
+  priceAtSale Float
+  
+  createdAt DateTime @default(now())
+
+  saleId String
+  sales Sale @relation(fields: [saleId] , references:[id])
+  productId String
+product   Product @relation(fields: [productId], references: [id])
+
 }
