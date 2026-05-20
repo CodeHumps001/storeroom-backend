@@ -10,6 +10,7 @@ const healthRoutes_1 = __importDefault(require("./routes/healthRoutes"));
 const authRoutes_1 = __importDefault(require("./routes/authRoutes"));
 const categoryRoutes_1 = __importDefault(require("./routes/categoryRoutes"));
 const productRoutes_1 = __importDefault(require("./routes/productRoutes"));
+const salesRoutes_1 = __importDefault(require("./routes/salesRoutes"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 //Routes
@@ -17,4 +18,5 @@ app.use("/api/v1/health", healthRoutes_1.default);
 app.use("/api/v1/auth", authRoutes_1.default);
 app.use("/api/v1/categories", categoryRoutes_1.default);
 app.use("/api/v1/products", productRoutes_1.default);
+app.use("/api/v1/sales", salesRoutes_1.default);
 exports.default = app;
