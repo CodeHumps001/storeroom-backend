@@ -103,5 +103,33 @@ const authLogin = async (req, res) => {
     }
 };
 //find me
-const getMe = (req, res) => { };
+const getMe = async (req, res) => {
+    try {
+        const me = await prisma_1.default.user.findUnique({
+            where: { id: req.user?.userId },
+            include: {
+                organization: {
+                    select: {
+                        organizationName: true,
+                        organizationType: true,
+                        location: true,
+                        contact: true,
+                    },
+                },
+            },
+        });
+        if (me == null) {
+            return res
+                .status(404)
+                .json({ status: "failed", message: "user not found" });
+        }
+        const { password: _, ...safeMe } = me;
+        res.status(200).json({ status: "success", data: safeMe });
+    }
+    catch (err) {
+        return res
+            .status(500)
+            .json({ status: "failed", message: "Something went wrong" });
+    }
+};
 exports.default = { authLogin, authRegister, getMe };
