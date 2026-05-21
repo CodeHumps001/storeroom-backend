@@ -24,5 +24,10 @@ router.delete(
   restrictTo("OWNER"),
   productController.deleteProduct,
 );
+router.get(
+  "/barcode/:barcode",
+  authMIddleware,
+  productController.getProductByBarcode,
+);
 
 export default router;

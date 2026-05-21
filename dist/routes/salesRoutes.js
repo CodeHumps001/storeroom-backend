@@ -9,5 +9,6 @@ const authMiddleware_1 = require("../middleware/authMiddleware");
 const router = express_1.default.Router();
 router.post("/", authMiddleware_1.authMIddleware, salesController_1.default.createSale);
 router.get("/", authMiddleware_1.authMIddleware, salesController_1.default.getSales);
+router.get("/:id/receipt", authMiddleware_1.authMIddleware, salesController_1.default.generateReceipt);
 router.get("/:id", authMiddleware_1.authMIddleware, salesController_1.default.getSale);
 exports.default = router;

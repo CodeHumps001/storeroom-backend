@@ -13,4 +13,5 @@ router.get("/", authMiddleware_1.authMIddleware, productController_1.default.get
 router.get("/:id", authMiddleware_1.authMIddleware, productController_1.default.getProduct);
 router.patch("/:id", authMiddleware_1.authMIddleware, (0, restrict_1.default)("OWNER"), productController_1.default.updateProduct);
 router.delete("/:id", authMiddleware_1.authMIddleware, (0, restrict_1.default)("OWNER"), productController_1.default.deleteProduct);
+router.get("/barcode/:barcode", authMiddleware_1.authMIddleware, productController_1.default.getProductByBarcode);
 exports.default = router;

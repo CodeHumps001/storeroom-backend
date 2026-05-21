@@ -10,13 +10,15 @@ const createProduct = async (req: AuthenticatedRequest, res: Response) => {
         .status(401)
         .json({ status: "failed", message: "Unauthorized" });
     }
-    const { name, costPrice, sellingPrice, quantity, categoryId } = req.body;
+    const { name, costPrice, sellingPrice, quantity, categoryId, barcode } =
+      req.body;
     const createProduct = await prisma.product.create({
       data: {
         name,
         costPrice,
         sellingPrice,
         quantity,
+        barcode,
         categoryId,
         organizationId: req.user.organizationId,
       },
@@ -137,10 +139,47 @@ const deleteProduct = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
+const getProductByBarcode = async (
+  req: AuthenticatedRequest,
+  res: Response,
+) => {
+  try {
+    if (!req.user) {
+      return res
+        .status(401)
+        .json({ status: "failed", message: "Unauthorized" });
+    }
+    const { barcode } = req.params as { barcode: string };
+    const product = await prisma.product.findFirst({
+      where: {
+        organizationId: req.user.organizationId,
+        barcode,
+      },
+
+      include: {
+        category: {
+          select: { name: true },
+        },
+      },
+    });
+
+    if (!product) {
+      return res
+        .status(404)
+        .json({ status: "failed", message: "product not found" });
+    }
+
+    res.status(200).json({ status: "success", data: product });
+  } catch (err: any) {
+    return res.status(500).json({ status: "failed", message: err.message });
+  }
+};
+
 export default {
   createProduct,
   getProduct,
   getProducts,
   updateProduct,
   deleteProduct,
+  getProductByBarcode,
 };
