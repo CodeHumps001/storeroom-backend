@@ -5,7 +5,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
+const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const mailer_1 = __importDefault(require("../lib/mailer"));
 //register organization + user
 const authRegister = async (req, res) => {
     try {
@@ -132,4 +134,84 @@ const getMe = async (req, res) => {
             .json({ status: "failed", message: "Something went wrong" });
     }
 };
-exports.default = { authLogin, authRegister, getMe };
+const forgotPassword = async (req, res) => {
+    try {
+        const { email } = req.body;
+        const user = await prisma_1.default.user.findUnique({ where: { email } });
+        if (!user) {
+            return res.status(200).json({
+                status: "success",
+                message: "If that email exists, a reset link has been sent",
+            });
+        }
+        const rawToken = crypto_1.default.randomBytes(32).toString("hex");
+        const hashedToken = crypto_1.default
+            .createHash("sha256")
+            .update(rawToken)
+            .digest("hex");
+        const updateUser = await prisma_1.default.user.update({
+            where: { email },
+            data: {
+                resetToken: hashedToken,
+                resetTokenExpiry: new Date(Date.now() + 15 * 60 * 1000),
+            },
+        });
+        await mailer_1.default.sendMail({
+            from: process.env.MAIL_USER,
+            to: email,
+            subject: "Welcome to Storeroom",
+            html: `
+  <h2>Password Reset Request</h2>
+  <p>Click the link below to reset your password. It expires in 15 minutes.</p>
+  <a href="${process.env.FRONTEND_URL}/reset-password?token=${rawToken}">Reset Password</a>
+`,
+        });
+        res.status(200).json({
+            status: "success",
+            message: "If that email exists, a reset link has been sent",
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ status: "failed", message: err.message });
+    }
+};
+const resetPassword = async (req, res) => {
+    try {
+        const { token, newPassword } = req.body;
+        const hashToken = crypto_1.default.createHash("sha256").update(token).digest("hex");
+        const user = await prisma_1.default.user.findFirst({
+            where: {
+                resetToken: hashToken,
+                resetTokenExpiry: { gt: new Date() },
+            },
+        });
+        if (!user) {
+            return res
+                .status(400)
+                .json({ status: "failed", message: "invalid token" });
+        }
+        const hashPassword = await bcrypt_1.default.hash(newPassword, 10);
+        const updateUser = await prisma_1.default.user.update({
+            where: { id: user.id },
+            data: {
+                password: hashPassword,
+                resetToken: null,
+                resetTokenExpiry: null,
+            },
+        });
+        res.status(200).json({
+            status: "success",
+            message: "Password changed succesfully, if you forget it again you will pay 10 cedes lol",
+        });
+    }
+    catch (err) {
+        return res.status(500).json({ status: "failed", message: err.message });
+    }
+};
+exports.default = {
+    authLogin,
+    authRegister,
+    getMe,
+    forgotPassword,
+    resetPassword,
+};
