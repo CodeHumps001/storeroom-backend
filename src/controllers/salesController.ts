@@ -11,7 +11,6 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
     const organizationId = req.user.organizationId;
     const userId = req.user.userId;
     const { items } = req.body;
-    // items = [{ productId, quantity }, ...]
 
     // Step 1: Validate stock for every item
     let totalAmount = 0;

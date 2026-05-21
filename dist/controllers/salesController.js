@@ -12,7 +12,6 @@ const createSale = async (req, res) => {
         const organizationId = req.user.organizationId;
         const userId = req.user.userId;
         const { items } = req.body;
-        // items = [{ productId, quantity }, ...]
         // Step 1: Validate stock for every item
         let totalAmount = 0;
         const productSnapshots = [];

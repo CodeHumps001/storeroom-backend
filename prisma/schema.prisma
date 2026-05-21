@@ -54,6 +54,8 @@ model User{
   email String @unique
   password String
   role Role @default(CASHIER)
+  resetToken      String?
+resetTokenExpiry DateTime?
 
   organizationId String
   organization  Organization @relation(fields:[organizationId], references: [id]) 
