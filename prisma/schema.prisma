@@ -30,6 +30,11 @@ enum OrganizationType{
 
 }
 
+enum PaymentMethod {
+  CASH
+  MOMO
+  CARD
+}
 
 
 
@@ -107,6 +112,9 @@ model Sale{
   
   createdAt DateTime @default(now())
   items SaleItem[]
+  amountPaid    Float?
+  paymentMethod PaymentMethod?
+  change       Float? 
 
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
