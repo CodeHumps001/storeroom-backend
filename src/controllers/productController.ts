@@ -135,13 +135,24 @@ const deleteProduct = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const { id } = req.params as { id: string };
+
+    const salesCount = await prisma.saleItem.count({
+      where: { productId: id },
+    });
+    if (salesCount > 0) {
+      return res.status(400).json({
+        status: "failed",
+        message: "Cannot delete a product that has sales history",
+      });
+    }
+
     const updateProduct = await prisma.product.delete({
       where: { id, organizationId: req.user.organizationId },
     });
     res.status(200).json({
       status: "success",
       data: updateProduct,
-      message: "Product deleted successfuly",
+      message: "Product deleted successfully",
     });
   } catch (err: any) {
     return res.status(500).json({ status: "failed", message: err.message });
