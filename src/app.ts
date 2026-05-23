@@ -1,6 +1,9 @@
 import dotenv from "dotenv";
 dotenv.config();
 import express from "express";
+import helmet from "helmet";
+import rateLimit from "express-rate-limit";
+import cors from "cors";
 import healthRouter from "./routes/healthRoutes";
 import authRouter from "./routes/authRoutes";
 import categoryRouter from "./routes/categoryRoutes";
@@ -11,6 +14,25 @@ import reportRouter from "./routes/reportRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 
 const app = express();
+app.use(helmet());
+
+app.use(
+  cors({
+    origin: "*",
+    credentials: false,
+  }),
+);
+
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // max 100 requests per IP per window
+  message: {
+    status: "failed",
+    message: "Too many requests, please try again later",
+  },
+});
+
+app.use("/api", limiter);
 
 app.use("/api/v1/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
