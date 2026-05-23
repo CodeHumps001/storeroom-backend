@@ -77,4 +77,32 @@ const getStaff = async (req: AuthenticatedRequest, res: Response) => {
     res.status(500).json({ status: "failed", message: err.message });
   }
 };
-export default { inviteStaff, getStaff };
+
+const deleteStaff = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ status: "failed", message: "Unauthorized" });
+  }
+  try {
+    const { id } = req.params as { id: string };
+
+    // Prevent deleting yourself
+    if (id === req.user.userId) {
+      return res.status(400).json({
+        status: "failed",
+        message: "You cannot remove yourself",
+      });
+    }
+
+    await prisma.user.delete({
+      where: { id, organizationId: req.user.organizationId },
+    });
+
+    res
+      .status(200)
+      .json({ status: "success", message: "Staff member removed" });
+  } catch (err: any) {
+    res.status(500).json({ status: "failed", message: err.message });
+  }
+};
+
+export default { inviteStaff, getStaff, deleteStaff };

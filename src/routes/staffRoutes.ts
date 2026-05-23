@@ -13,5 +13,11 @@ router.post(
   staffController.inviteStaff,
 );
 router.get("/", authMIddleware, staffController.getStaff);
+router.delete(
+  "/:id",
+  authMIddleware,
+  restrictTo("OWNER"),
+  staffController.deleteStaff,
+);
 
 export default router;
