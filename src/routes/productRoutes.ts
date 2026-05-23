@@ -2,12 +2,14 @@ import express from "express";
 import productController from "../controllers/productController";
 import { authMIddleware } from "../middleware/authMiddleware";
 import restrictTo from "../middleware/restrict";
+import { upload } from "../lib/cloudinary";
 const router = express.Router();
 
 router.post(
   "/",
   authMIddleware,
   restrictTo("OWNER"),
+  upload.single("image"),
   productController.createProduct,
 );
 router.get("/", authMIddleware, productController.getProducts);
@@ -16,6 +18,7 @@ router.patch(
   "/:id",
   authMIddleware,
   restrictTo("OWNER"),
+  upload.single("image"),
   productController.updateProduct,
 );
 router.delete(

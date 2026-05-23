@@ -7,9 +7,12 @@ import categoryRouter from "./routes/categoryRoutes";
 import productRouter from "./routes/productRoutes";
 import salesRouter from "./routes/salesRoutes";
 import staffRouter from "./routes/staffRoutes";
+import reportRouter from "./routes/reportRoutes";
+import paymentRoutes from "./routes/paymentRoutes";
 
 const app = express();
 
+app.use("/api/v1/payments/webhook", express.raw({ type: "application/json" }));
 app.use(express.json());
 
 //Routes
@@ -19,5 +22,7 @@ app.use("/api/v1/categories", categoryRouter);
 app.use("/api/v1/products", productRouter);
 app.use("/api/v1/sales", salesRouter);
 app.use("/api/v1/staff", staffRouter);
+app.use("/api/v1/reports", reportRouter);
+app.use("/api/v1/payments", paymentRoutes);
 
 export default app;

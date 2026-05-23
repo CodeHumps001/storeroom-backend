@@ -20,14 +20,44 @@ enum Role {
   CASHIER
 }
 
-enum OrganizationType{
-  RETAIL
-  WHOLESALE
-  PHARMACY
-  GROCERY
-  ELECTRONICS
-  OTHER
+enum Plan {
+  FREE
+  PRO
+}
 
+enum SubscriptionStatus {
+  ACTIVE
+  INACTIVE
+  EXPIRED
+}
+
+enum OrganizationType {
+  RETAIL 
+  WHOLESALE 
+  GROCERY 
+  SUPERMARKET 
+  PHARMACY 
+  RESTAURANT 
+  CAFE 
+  BAKERY 
+  ELECTRONICS 
+  FASHION 
+  HARDWARE 
+  BEAUTY 
+  BOOKSTORE 
+  STATIONERY 
+  AUTO_PARTS 
+  MOBILE_SHOP 
+  FURNITURE 
+  WAREHOUSE 
+  DISTRIBUTION 
+  MANUFACTURING 
+  ECOMMERCE 
+  SERVICE 
+  HOSPITAL 
+  CLINIC 
+  AGRICULTURE 
+  OTHER 
 }
 
 enum PaymentMethod {
@@ -44,6 +74,10 @@ model Organization{
   organizationType OrganizationType
   location String
   contact String
+  plan               Plan               @default(FREE)
+  subscriptionStatus SubscriptionStatus @default(INACTIVE)
+  subscriptionExpiry DateTime?
+  paystackCustomerId String?
   createdAt  DateTime @default(now())
 
   users User[]
@@ -76,6 +110,7 @@ model Product {
   sellingPrice     Float
   quantity  Int      @default(0)
   barcode String? @unique
+  imageUrl String?
   createdAt DateTime @default(now())
 
   organizationId   String

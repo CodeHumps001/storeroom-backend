@@ -10,8 +10,11 @@ const createProduct = async (req: AuthenticatedRequest, res: Response) => {
         .status(401)
         .json({ status: "failed", message: "Unauthorized" });
     }
-    const { name, costPrice, sellingPrice, quantity, categoryId, barcode } =
-      req.body;
+    const { name, categoryId, barcode } = req.body;
+    const costPrice = parseFloat(req.body.costPrice);
+    const sellingPrice = parseFloat(req.body.sellingPrice);
+    const quantity = parseInt(req.body.quantity);
+    const imageUrl = (req as any).file?.path;
     const createProduct = await prisma.product.create({
       data: {
         name,
@@ -21,6 +24,7 @@ const createProduct = async (req: AuthenticatedRequest, res: Response) => {
         barcode,
         categoryId,
         organizationId: req.user.organizationId,
+        ...(imageUrl && { imageUrl }),
       },
     });
 
@@ -96,6 +100,7 @@ const updateProduct = async (req: AuthenticatedRequest, res: Response) => {
 
     const { id } = req.params as { id: string };
     const { name, costPrice, sellingPrice, quantity } = req.body;
+    const imageUrl = (req as any).file?.path;
     const updateProduct = await prisma.product.update({
       where: { id, organizationId: req.user.organizationId },
       data: {
@@ -103,6 +108,7 @@ const updateProduct = async (req: AuthenticatedRequest, res: Response) => {
         costPrice,
         sellingPrice,
         quantity,
+        ...(imageUrl && { imageUrl }),
       },
     });
     res.status(200).json({
