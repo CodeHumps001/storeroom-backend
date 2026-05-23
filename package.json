@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "description": "Store management System ",
   "main": "app.ts",
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
-    "build": "tsc",
+    "build": "npm install && npx prisma generate && tsc",
     "start": "node dist/server.js"
   },
   "author": "Yaw fosu",
