@@ -99,7 +99,10 @@ const updateProduct = async (req: AuthenticatedRequest, res: Response) => {
     }
 
     const { id } = req.params as { id: string };
-    const { name, costPrice, sellingPrice, quantity } = req.body;
+    const { name } = req.body;
+    const costPrice = parseFloat(req.body.costPrice);
+    const sellingPrice = parseFloat(req.body.sellingPrice);
+    const quantity = parseInt(req.body.quantity);
     const imageUrl = (req as any).file?.path;
     const updateProduct = await prisma.product.update({
       where: { id, organizationId: req.user.organizationId },
