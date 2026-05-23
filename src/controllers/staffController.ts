@@ -57,4 +57,24 @@ const inviteStaff = async (req: AuthenticatedRequest, res: Response) => {
   }
 };
 
-export default inviteStaff;
+const getStaff = async (req: AuthenticatedRequest, res: Response) => {
+  if (!req.user) {
+    return res.status(401).json({ status: "failed", message: "Unauthorized" });
+  }
+  try {
+    const staff = await prisma.user.findMany({
+      where: { organizationId: req.user.organizationId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        createdAt: true,
+      },
+    });
+    res.status(200).json({ status: "success", data: staff });
+  } catch (err: any) {
+    res.status(500).json({ status: "failed", message: err.message });
+  }
+};
+export default { inviteStaff, getStaff };
