@@ -94,7 +94,10 @@ const updateProduct = async (req, res) => {
                 .json({ status: "failed", message: "Unauthorized" });
         }
         const { id } = req.params;
-        const { name, costPrice, sellingPrice, quantity } = req.body;
+        const { name } = req.body;
+        const costPrice = parseFloat(req.body.costPrice);
+        const sellingPrice = parseFloat(req.body.sellingPrice);
+        const quantity = parseInt(req.body.quantity);
         const imageUrl = req.file?.path;
         const updateProduct = await prisma_1.default.product.update({
             where: { id, organizationId: req.user.organizationId },
@@ -125,13 +128,22 @@ const deleteProduct = async (req, res) => {
                 .json({ status: "failed", message: "Unauthorized" });
         }
         const { id } = req.params;
+        const salesCount = await prisma_1.default.saleItem.count({
+            where: { productId: id },
+        });
+        if (salesCount > 0) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Cannot delete a product that has sales history",
+            });
+        }
         const updateProduct = await prisma_1.default.product.delete({
             where: { id, organizationId: req.user.organizationId },
         });
         res.status(200).json({
             status: "success",
             data: updateProduct,
-            message: "Product deleted successfuly",
+            message: "Product deleted successfully",
         });
     }
     catch (err) {

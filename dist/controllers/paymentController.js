@@ -21,7 +21,11 @@ const initializePayment = async (req, res) => {
                 .status(404)
                 .json({ status: "failed", message: "User not found" });
         }
-        const response = await axios_1.default.post("https://api.paystack.co/transaction/initialize", { email: user.email, amount: amount * 100 }, {
+        const response = await axios_1.default.post("https://api.paystack.co/transaction/initialize", {
+            email: user.email,
+            amount: amount * 100,
+            callback_url: `${process.env.FRONTEND_URL}/settings?payment=success`,
+        }, {
             headers: {
                 Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
             },

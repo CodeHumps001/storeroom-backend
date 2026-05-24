@@ -116,6 +116,9 @@ const getMe = async (req, res) => {
                         organizationType: true,
                         location: true,
                         contact: true,
+                        plan: true,
+                        subscriptionStatus: true,
+                        subscriptionExpiry: true,
                     },
                 },
             },
@@ -137,7 +140,14 @@ const getMe = async (req, res) => {
 const forgotPassword = async (req, res) => {
     try {
         const { email } = req.body;
+        if (!email) {
+            return res.status(400).json({
+                status: "failed",
+                message: "Email is required",
+            });
+        }
         const user = await prisma_1.default.user.findUnique({ where: { email } });
+        // Always return success for security (don't reveal if email exists)
         if (!user) {
             return res.status(200).json({
                 status: "success",
@@ -149,22 +159,68 @@ const forgotPassword = async (req, res) => {
             .createHash("sha256")
             .update(rawToken)
             .digest("hex");
-        const updateUser = await prisma_1.default.user.update({
+        await prisma_1.default.user.update({
             where: { email },
             data: {
                 resetToken: hashedToken,
-                resetTokenExpiry: new Date(Date.now() + 15 * 60 * 1000),
+                resetTokenExpiry: new Date(Date.now() + 15 * 60 * 1000), // 15 minutes
             },
         });
+        const resetUrl = `${process.env.FRONTEND_URL}reset-password?token=${rawToken}`;
+        // Send email using Gmail transporter
         await mailer_1.default.sendMail({
-            from: process.env.MAIL_USER,
+            from: process.env.GMAIL_USER,
             to: email,
-            subject: "Welcome to Storeroom",
+            subject: "Reset your Storeroom password",
             html: `
-  <h2>Password Reset Request</h2>
-  <p>Click the link below to reset your password. It expires in 15 minutes.</p>
-  <a href="${process.env.FRONTEND_URL}/reset-password?token=${rawToken}">Reset Password</a>
-`,
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="utf-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          <title>Reset Your Password</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1a1a1a; }
+            .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+            .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #f97316; }
+            .logo { font-size: 24px; font-weight: bold; }
+            .logo span:first-child { color: #000; }
+            .logo span:last-child { color: #f97316; }
+            .content { padding: 30px 0; }
+            .button { display: inline-block; background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+            .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #666; }
+          </style>
+        </head>
+        <body>
+          <div class="container">
+            <div class="header">
+              <div class="logo">
+                <span>Store</span><span>room</span>
+              </div>
+            </div>
+            <div class="content">
+              <h2>Reset Your Password</h2>
+              <p>Hi ${user.name || "there"},</p>
+              <p>We received a request to reset your password for your Storeroom account.</p>
+              <p>Click the button below to create a new password:</p>
+              <div style="text-align: center;">
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </div>
+              <p>Or copy and paste this link into your browser:</p>
+              <p style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">
+                ${resetUrl}
+              </p>
+              <p>This link expires in <strong>15 minutes</strong>.</p>
+              <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+            </div>
+            <div class="footer">
+              <p>Storeroom · Smart Inventory Management for African Businesses</p>
+              <p>© ${new Date().getFullYear()} Storeroom. All rights reserved.</p>
+            </div>
+          </div>
+        </body>
+        </html>
+      `,
         });
         res.status(200).json({
             status: "success",
@@ -172,6 +228,7 @@ const forgotPassword = async (req, res) => {
         });
     }
     catch (err) {
+        console.error("Forgot password error:", err);
         return res.status(500).json({ status: "failed", message: err.message });
     }
 };
@@ -188,10 +245,10 @@ const resetPassword = async (req, res) => {
         if (!user) {
             return res
                 .status(400)
-                .json({ status: "failed", message: "invalid token" });
+                .json({ status: "failed", message: "invalid or expired token" });
         }
         const hashPassword = await bcrypt_1.default.hash(newPassword, 10);
-        const updateUser = await prisma_1.default.user.update({
+        await prisma_1.default.user.update({
             where: { id: user.id },
             data: {
                 password: hashPassword,
@@ -201,7 +258,7 @@ const resetPassword = async (req, res) => {
         });
         res.status(200).json({
             status: "success",
-            message: "Password changed succesfully, if you forget it again you will pay 10 cedes lol",
+            message: "Password changed successfully! You can now log in.",
         });
     }
     catch (err) {

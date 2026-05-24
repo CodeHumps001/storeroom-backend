@@ -4,11 +4,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
+const organizationController_1 = __importDefault(require("../controllers/organizationController"));
 const authMiddleware_1 = require("../middleware/authMiddleware");
 const restrict_1 = __importDefault(require("../middleware/restrict"));
-const staffController_1 = __importDefault(require("../controllers/staffController"));
 const router = express_1.default.Router();
-router.post("/", authMiddleware_1.authMIddleware, (0, restrict_1.default)("OWNER"), staffController_1.default.inviteStaff);
-router.get("/", authMiddleware_1.authMIddleware, staffController_1.default.getStaff);
-router.delete("/:id", authMiddleware_1.authMIddleware, (0, restrict_1.default)("OWNER"), staffController_1.default.deleteStaff);
+router.patch("/", authMiddleware_1.authMIddleware, (0, restrict_1.default)("OWNER"), organizationController_1.default.updateOrganization);
 exports.default = router;

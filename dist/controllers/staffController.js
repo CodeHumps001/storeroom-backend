@@ -54,4 +54,49 @@ const inviteStaff = async (req, res) => {
         res.status(500).json({ status: "failed", message: err.message });
     }
 };
-exports.default = inviteStaff;
+const getStaff = async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ status: "failed", message: "Unauthorized" });
+    }
+    try {
+        const staff = await prisma_1.default.user.findMany({
+            where: { organizationId: req.user.organizationId },
+            select: {
+                id: true,
+                name: true,
+                email: true,
+                role: true,
+                createdAt: true,
+            },
+        });
+        res.status(200).json({ status: "success", data: staff });
+    }
+    catch (err) {
+        res.status(500).json({ status: "failed", message: err.message });
+    }
+};
+const deleteStaff = async (req, res) => {
+    if (!req.user) {
+        return res.status(401).json({ status: "failed", message: "Unauthorized" });
+    }
+    try {
+        const { id } = req.params;
+        // Prevent deleting yourself
+        if (id === req.user.userId) {
+            return res.status(400).json({
+                status: "failed",
+                message: "You cannot remove yourself",
+            });
+        }
+        await prisma_1.default.user.delete({
+            where: { id, organizationId: req.user.organizationId },
+        });
+        res
+            .status(200)
+            .json({ status: "success", message: "Staff member removed" });
+    }
+    catch (err) {
+        res.status(500).json({ status: "failed", message: err.message });
+    }
+};
+exports.default = { inviteStaff, getStaff, deleteStaff };
