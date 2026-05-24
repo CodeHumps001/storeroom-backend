@@ -13,6 +13,7 @@ import staffRouter from "./routes/staffRoutes";
 import reportRouter from "./routes/reportRoutes";
 import paymentRoutes from "./routes/paymentRoutes";
 import organizationRouter from "./routes/organizationRoutes";
+import creditRouter from "./routes/creditRoutes";
 
 const app = express();
 app.use(helmet());
@@ -49,5 +50,6 @@ app.use("/api/v1/reports", reportRouter);
 app.use("/api/v1/payments", paymentRoutes);
 
 app.use("/api/v1/organization", organizationRouter);
+app.use("/api/v1/credits", creditRouter);
 
 export default app;

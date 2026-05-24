@@ -83,6 +83,7 @@ model Organization{
   users User[]
   products Product[]
   categories Category[]
+  credits Credit[]
   
   sales Sale[]
 }
@@ -170,4 +171,18 @@ model SaleItem{
   productId String
 product   Product @relation(fields: [productId], references: [id])
 
+}
+
+model Credit {
+  id             String       @id @default(uuid())
+  customerName   String
+  customerPhone  String?
+  amount         Float
+  amountPaid     Float        @default(0)
+  note           String?
+  isPaid         Boolean      @default(false)
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 }
