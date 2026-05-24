@@ -25,7 +25,11 @@ const initializePayment = async (req: AuthenticatedRequest, res: Response) => {
 
     const response = await axios.post(
       "https://api.paystack.co/transaction/initialize",
-      { email: user.email, amount: amount * 100 },
+      {
+        email: user.email,
+        amount: amount * 100,
+        callback_url: `${process.env.FRONTEND_URL}/settings?payment=success`,
+      },
       {
         headers: {
           Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
