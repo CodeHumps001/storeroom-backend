@@ -72,7 +72,7 @@ const recordPayment = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(401).json({ status: "failed", message: "Unauthorized" });
   }
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
     const { amountPaid } = req.body;
 
     const credit = await prisma.credit.findUnique({
@@ -112,7 +112,7 @@ const deleteCredit = async (req: AuthenticatedRequest, res: Response) => {
     return res.status(401).json({ status: "failed", message: "Unauthorized" });
   }
   try {
-    const { id } = req.params;
+    const { id } = req.params as { id: string };
 
     const credit = await prisma.credit.findUnique({
       where: { id, organizationId: req.user.organizationId },
