@@ -169,7 +169,7 @@ const forgotPassword = async (req, res) => {
         const resetUrl = `${process.env.FRONTEND_URL}reset-password?token=${rawToken}`;
         // Send email using Gmail transporter
         await mailer_1.default.sendMail({
-            from: process.env.GMAIL_USER,
+            from: "codehumps00233@gmail.com",
             to: email,
             subject: "Reset your Storeroom password",
             html: `

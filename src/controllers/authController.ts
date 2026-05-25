@@ -194,7 +194,7 @@ const forgotPassword = async (req: AuthenticatedRequest, res: Response) => {
 
     // Send email using Gmail transporter
     await transporter.sendMail({
-      from: process.env.GMAIL_USER,
+      from: "codehumps00233@gmail.com",
       to: email,
       subject: "Reset your Storeroom password",
       html: `
