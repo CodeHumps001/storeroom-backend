@@ -27,7 +27,7 @@ app.use(
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // max 100 requests per IP per window
+  max: 1000, // max 100 requests per IP per window
   message: {
     status: "failed",
     message: "Too many requests, please try again later",
