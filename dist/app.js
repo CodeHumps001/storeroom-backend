@@ -20,6 +20,7 @@ const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const organizationRoutes_1 = __importDefault(require("./routes/organizationRoutes"));
 const creditRoutes_1 = __importDefault(require("./routes/creditRoutes"));
 const app = (0, express_1.default)();
+app.set("trust proxy", 1); // Add this line
 app.use((0, helmet_1.default)());
 app.use((0, cors_1.default)({
     origin: "*",

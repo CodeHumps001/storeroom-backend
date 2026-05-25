@@ -7,7 +7,6 @@ const prisma_1 = __importDefault(require("../lib/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const crypto_1 = __importDefault(require("crypto"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const mailer_1 = __importDefault(require("../lib/mailer"));
 //register organization + user
 const authRegister = async (req, res) => {
     try {
@@ -167,61 +166,73 @@ const forgotPassword = async (req, res) => {
             },
         });
         const resetUrl = `${process.env.FRONTEND_URL}reset-password?token=${rawToken}`;
-        // Send email using Gmail transporter
-        await mailer_1.default.sendMail({
-            from: "codehumps00233@gmail.com",
-            to: email,
-            subject: "Reset your Storeroom password",
-            html: `
-        <!DOCTYPE html>
-        <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Your Password</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1a1a1a; }
-            .container { max-width: 500px; margin: 0 auto; padding: 20px; }
-            .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #f97316; }
-            .logo { font-size: 24px; font-weight: bold; }
-            .logo span:first-child { color: #000; }
-            .logo span:last-child { color: #f97316; }
-            .content { padding: 30px 0; }
-            .button { display: inline-block; background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
-            .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <div class="logo">
-                <span>Store</span><span>room</span>
+        // Send email using Brevo API (fetch)
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "api-key": process.env.BREVO_API_KEY,
+            },
+            body: JSON.stringify({
+                sender: { name: "Storeroom", email: "codehumps00233@gmail.com" },
+                to: [{ email: email }],
+                subject: "Reset your Storeroom password",
+                htmlContent: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Reset Your Password</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.6; color: #1a1a1a; }
+              .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+              .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #f97316; }
+              .logo { font-size: 24px; font-weight: bold; }
+              .logo span:first-child { color: #000; }
+              .logo span:last-child { color: #f97316; }
+              .content { padding: 30px 0; }
+              .button { display: inline-block; background-color: #f97316; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: 600; margin: 20px 0; }
+              .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="logo">
+                  <span>Store</span><span>room</span>
+                </div>
+              </div>
+              <div class="content">
+                <h2>Reset Your Password</h2>
+                <p>Hi ${user.name || "there"},</p>
+                <p>We received a request to reset your password for your Storeroom account.</p>
+                <p>Click the button below to create a new password:</p>
+                <div style="text-align: center;">
+                  <a href="${resetUrl}" class="button">Reset Password</a>
+                </div>
+                <p>Or copy and paste this link into your browser:</p>
+                <p style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">
+                  ${resetUrl}
+                </p>
+                <p>This link expires in <strong>15 minutes</strong>.</p>
+                <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
+              </div>
+              <div class="footer">
+                <p>Storeroom · Smart Inventory Management for African Businesses</p>
+                <p>© ${new Date().getFullYear()} Storeroom. All rights reserved.</p>
               </div>
             </div>
-            <div class="content">
-              <h2>Reset Your Password</h2>
-              <p>Hi ${user.name || "there"},</p>
-              <p>We received a request to reset your password for your Storeroom account.</p>
-              <p>Click the button below to create a new password:</p>
-              <div style="text-align: center;">
-                <a href="${resetUrl}" class="button">Reset Password</a>
-              </div>
-              <p>Or copy and paste this link into your browser:</p>
-              <p style="background: #f5f5f5; padding: 10px; border-radius: 5px; word-break: break-all; font-size: 12px;">
-                ${resetUrl}
-              </p>
-              <p>This link expires in <strong>15 minutes</strong>.</p>
-              <p>If you didn't request this, please ignore this email. Your password will remain unchanged.</p>
-            </div>
-            <div class="footer">
-              <p>Storeroom · Smart Inventory Management for African Businesses</p>
-              <p>© ${new Date().getFullYear()} Storeroom. All rights reserved.</p>
-            </div>
-          </div>
-        </body>
-        </html>
-      `,
+          </body>
+          </html>
+        `,
+            }),
         });
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Brevo API error:", errorData);
+            throw new Error("Failed to send email");
+        }
         res.status(200).json({
             status: "success",
             message: "If that email exists, a reset link has been sent",
