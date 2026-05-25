@@ -16,6 +16,7 @@ import organizationRouter from "./routes/organizationRoutes";
 import creditRouter from "./routes/creditRoutes";
 
 const app = express();
+app.set("trust proxy", 1); // Add this line
 app.use(helmet());
 
 app.use(

@@ -8,6 +8,13 @@ const transporter = nodemailer.createTransport({
     user: process.env.BREVO_SMTP_LOGIN,
     pass: process.env.BREVO_SMTP_KEY,
   },
+  // Add these for Render
+  connectionTimeout: 30000,
+  greetingTimeout: 30000,
+  socketTimeout: 30000,
+  tls: {
+    rejectUnauthorized: false,
+  },
 });
 
 export default transporter;
