@@ -19,16 +19,18 @@ const authRegister = async (req: Request, res: Response) => {
       password,
       role,
     } = req.body;
+
     // 2. Check if user email already exists
     const user = await prisma.user.findUnique({ where: { email } });
-    //    - if yes, send error
     if (user) {
       return res
         .status(409)
         .json({ status: "failed", message: "User already exist" });
     }
+
     // 3. Hash the password
     const hashPassword = await bcrypt.hash(password, 10);
+
     // 4. Create Organization + User together in one DB transaction
     const organizationProfile = await prisma.organization.create({
       data: {
@@ -36,6 +38,10 @@ const authRegister = async (req: Request, res: Response) => {
         organizationType,
         location,
         contact,
+        plan: "FREE",
+        subscriptionStatus: "ACTIVE",
+        trialStart: new Date(),
+        trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
         users: {
           create: {
             name,
@@ -51,6 +57,7 @@ const authRegister = async (req: Request, res: Response) => {
         },
       },
     });
+
     // 5. Generate JWT containing userId, organizationId, role
     const options: SignOptions = { expiresIn: "7d" };
     const token = jwt.sign(
@@ -62,6 +69,7 @@ const authRegister = async (req: Request, res: Response) => {
       process.env.JWT_SECRET as string,
       options,
     );
+
     // 6. Send response with organization + user + token
     res.status(201).json({
       status: "success",
@@ -134,6 +142,8 @@ const getMe = async (req: AuthenticatedRequest, res: Response) => {
             plan: true,
             subscriptionStatus: true,
             subscriptionExpiry: true,
+            trialStart: true,
+            trialEnd: true,
           },
         },
       },
@@ -145,15 +155,42 @@ const getMe = async (req: AuthenticatedRequest, res: Response) => {
         .json({ status: "failed", message: "user not found" });
     }
 
+    // Calculate trial status with proper type checking
+    const now = new Date();
+    const trialEnd = me.organization.trialEnd as Date | null;
+    let isTrialActive = false;
+    let daysLeft = 0;
+
+    if (
+      trialEnd &&
+      trialEnd instanceof Date &&
+      trialEnd.getTime() > now.getTime()
+    ) {
+      isTrialActive = true;
+      daysLeft = Math.ceil(
+        (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+    }
+
     const { password: _, ...safeMe } = me;
-    res.status(200).json({ status: "success", data: safeMe });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        ...safeMe,
+        trial: {
+          isActive: isTrialActive,
+          daysLeft: daysLeft,
+          endsAt: trialEnd,
+        },
+      },
+    });
   } catch (err) {
     return res
       .status(500)
       .json({ status: "failed", message: "Something went wrong" });
   }
 };
-
 const forgotPassword = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const { email } = req.body;

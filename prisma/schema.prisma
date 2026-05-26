@@ -78,6 +78,8 @@ model Organization{
   subscriptionStatus SubscriptionStatus @default(INACTIVE)
   subscriptionExpiry DateTime?
   paystackCustomerId String?
+   trialStart    DateTime?
+  trialEnd      DateTime?
   createdAt  DateTime @default(now())
 
   users User[]
