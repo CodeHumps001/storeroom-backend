@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import prisma from "../lib/prisma";
 import { AuthenticatedRequest } from "../middleware/authMiddleware";
+import { checkProductLimit } from "../lib/checkLimit";
 
 //1: createProduct
 const createProduct = async (req: AuthenticatedRequest, res: Response) => {
@@ -10,11 +11,17 @@ const createProduct = async (req: AuthenticatedRequest, res: Response) => {
         .status(401)
         .json({ status: "failed", message: "Unauthorized" });
     }
+
+    // Check product limit for FREE users
+    const limitError = await checkProductLimit(req.user.organizationId, res);
+    if (limitError) return; // Response already sent, stop execution
+
     const { name, categoryId, barcode } = req.body;
     const costPrice = parseFloat(req.body.costPrice);
     const sellingPrice = parseFloat(req.body.sellingPrice);
     const quantity = parseInt(req.body.quantity);
     const imageUrl = (req as any).file?.path;
+
     const createProduct = await prisma.product.create({
       data: {
         name,
