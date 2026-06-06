@@ -5,6 +5,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const pdfkit_1 = __importDefault(require("pdfkit"));
+const sms_1 = __importDefault(require("../lib/sms"));
 const createSale = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ status: "failed", message: "Unauthorized" });
@@ -12,7 +13,7 @@ const createSale = async (req, res) => {
     try {
         const organizationId = req.user.organizationId;
         const userId = req.user.userId;
-        const { items, amountPaid, paymentMethod } = req.body;
+        const { items, amountPaid, paymentMethod, customerPhone } = req.body; // Added customerPhone
         // Step 1: Validate stock for every item
         let totalAmount = 0;
         const productSnapshots = [];
@@ -66,7 +67,11 @@ const createSale = async (req, res) => {
                     },
                 },
                 include: {
-                    items: true,
+                    items: {
+                        include: {
+                            product: true,
+                        },
+                    },
                 },
             });
             // Decrement stock for each product
@@ -78,9 +83,42 @@ const createSale = async (req, res) => {
             }
             return newSale;
         });
+        // Send SMS receipt if customer phone was provided
+        if (customerPhone) {
+            try {
+                // Get organization name
+                const organization = await prisma_1.default.organization.findUnique({
+                    where: { id: organizationId },
+                    select: { organizationName: true },
+                });
+                const storeName = organization?.organizationName || "Our Store";
+                const change = amountPaid - totalAmount;
+                // Create receipt message with store name
+                const message = `${storeName.toUpperCase()}
+
+✅ SALE RECEIPT
+
+ID: #${sale.id.slice(-8).toUpperCase()}
+Date: ${new Date().toLocaleDateString()}
+Total: GHS ${totalAmount.toFixed(2)}
+Paid: GHS ${amountPaid.toFixed(2)}
+Change: GHS ${change.toFixed(2)}
+Payment: ${paymentMethod}
+
+Thank you for shopping with ${storeName}!`;
+                await sms_1.default.sendSMS(customerPhone, message);
+                console.log(`SMS receipt sent to ${customerPhone}`);
+            }
+            catch (smsError) {
+                console.error("Failed to send SMS receipt:", smsError);
+                // Don't fail the sale if SMS fails
+            }
+        }
         res.status(201).json({
             status: "success",
-            message: "Sale recorded successfully",
+            message: customerPhone
+                ? "Sale recorded successfully and SMS receipt sent"
+                : "Sale recorded successfully",
             data: sale,
         });
     }
@@ -309,4 +347,21 @@ const generateReceipt = async (req, res) => {
         return res.status(500).json({ status: "failed", message: err.message });
     }
 };
-exports.default = { createSale, getSale, getSales, generateReceipt };
+const testSMS = async (req, res) => {
+    try {
+        const { phoneNumber, message } = req.body;
+        const result = await sms_1.default.sendSMS(phoneNumber, message);
+        res.status(200).json({
+            status: "success",
+            message: "SMS sent successfully",
+            data: result,
+        });
+    }
+    catch (err) {
+        res.status(500).json({
+            status: "failed",
+            message: err.message,
+        });
+    }
+};
+exports.default = { createSale, getSale, getSales, generateReceipt, testSMS };

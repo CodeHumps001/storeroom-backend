@@ -19,6 +19,7 @@ const reportRoutes_1 = __importDefault(require("./routes/reportRoutes"));
 const paymentRoutes_1 = __importDefault(require("./routes/paymentRoutes"));
 const organizationRoutes_1 = __importDefault(require("./routes/organizationRoutes"));
 const creditRoutes_1 = __importDefault(require("./routes/creditRoutes"));
+const contactRoutes_1 = __importDefault(require("./routes/contactRoutes"));
 const app = (0, express_1.default)();
 app.set("trust proxy", 1); // Add this line
 app.use((0, helmet_1.default)());
@@ -48,4 +49,5 @@ app.use("/api/v1/reports", reportRoutes_1.default);
 app.use("/api/v1/payments", paymentRoutes_1.default);
 app.use("/api/v1/organization", organizationRoutes_1.default);
 app.use("/api/v1/credits", creditRoutes_1.default);
+app.use("/api/v1/contact", contactRoutes_1.default);
 exports.default = app;

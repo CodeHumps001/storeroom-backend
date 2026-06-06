@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = __importDefault(require("../lib/prisma"));
+const checkLimit_1 = require("../lib/checkLimit");
 //1: createProduct
 const createProduct = async (req, res) => {
     try {
@@ -12,6 +13,10 @@ const createProduct = async (req, res) => {
                 .status(401)
                 .json({ status: "failed", message: "Unauthorized" });
         }
+        // Check product limit for FREE users
+        const limitError = await (0, checkLimit_1.checkProductLimit)(req.user.organizationId, res);
+        if (limitError)
+            return; // Response already sent, stop execution
         const { name, categoryId, barcode } = req.body;
         const costPrice = parseFloat(req.body.costPrice);
         const sellingPrice = parseFloat(req.body.sellingPrice);

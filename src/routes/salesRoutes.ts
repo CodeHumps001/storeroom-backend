@@ -5,6 +5,7 @@ const router = express.Router();
 
 router.post("/", authMIddleware, salesController.createSale);
 router.get("/", authMIddleware, salesController.getSales);
+router.post("/test-sms", authMIddleware, salesController.testSMS);
 router.get("/:id/receipt", authMIddleware, salesController.generateReceipt);
 router.get("/:id", authMIddleware, salesController.getSale);
 

@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 const prisma_1 = __importDefault(require("../lib/prisma"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
-const mailer_1 = __importDefault(require("../lib/mailer"));
 const inviteStaff = async (req, res) => {
     if (!req.user) {
         return res.status(401).json({ status: "failed", message: "Unauthorized" });
@@ -34,18 +33,63 @@ const inviteStaff = async (req, res) => {
                 },
             },
         });
-        await mailer_1.default.sendMail({
-            from: process.env.MAIL_USER,
-            to: email,
-            subject: "Welcome to Storeroom",
-            html: `
-    <h2>You have been invited to join ${newUser.organization.organizationName}</h2>
-    <p>Your login credentials:</p>
-    <p>Email: ${email}</p>
-    <p>Temporary Password: ${tempPassword}</p>
-    <p>Please login and change your password.</p>
-  `,
+        // Send email using Brevo API (fetch)
+        const response = await fetch("https://api.brevo.com/v3/smtp/email", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "api-key": process.env.BREVO_API_KEY,
+            },
+            body: JSON.stringify({
+                sender: { name: "Storeroom", email: "codehumps00233@gmail.com" },
+                to: [{ email: email }],
+                subject: "Welcome to Storeroom",
+                htmlContent: `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <title>Welcome to Storeroom</title>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #1a1a1a; }
+              .container { max-width: 500px; margin: 0 auto; padding: 20px; }
+              .header { text-align: center; padding: 20px 0; border-bottom: 2px solid #f97316; }
+              .logo { font-size: 24px; font-weight: bold; }
+              .logo span:first-child { color: #000; }
+              .logo span:last-child { color: #f97316; }
+              .content { padding: 30px 0; }
+              .footer { text-align: center; padding-top: 20px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #666; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="logo">
+                  <span>Store</span><span>room</span>
+                </div>
+              </div>
+              <div class="content">
+                <h2>You have been invited to join ${newUser.organization.organizationName}</h2>
+                <p>Your login credentials:</p>
+                <p><strong>Email:</strong> ${email}</p>
+                <p><strong>Temporary Password:</strong> ${tempPassword}</p>
+                <p>Please login and change your password.</p>
+                <p><a href="${process.env.FRONTEND_URL}login" style="display: inline-block; background-color: #f97316; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Login to Storeroom</a></p>
+              </div>
+              <div class="footer">
+                <p>Storeroom · Smart Inventory Management for African Businesses</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `,
+            }),
         });
+        if (!response.ok) {
+            const errorData = await response.json();
+            console.error("Brevo API error:", errorData);
+            throw new Error("Failed to send invitation email");
+        }
         res
             .status(201)
             .json({ status: "success", message: "Cashier added successfully" });

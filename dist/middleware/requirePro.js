@@ -18,13 +18,21 @@ const gatingFeature = async (req, res, next) => {
         if (!result) {
             return res.status(404).json({ status: "failed", message: "Not found" });
         }
-        if (result.plan === "FREE" || result.subscriptionStatus !== "ACTIVE") {
+        // Check if user is on active trial
+        const now = new Date();
+        const isOnTrial = result.trialEnd ? result.trialEnd > now : false;
+        // Allow access if: PRO plan OR on active trial
+        const hasAccess = result.plan === "PRO" || isOnTrial;
+        if (!hasAccess) {
             return res.status(403).json({
                 status: "failed",
                 message: "Please upgrade to continue using this feature",
             });
         }
-        if (result.subscriptionExpiry && result.subscriptionExpiry < new Date()) {
+        // Check subscription expiry only for PRO users (not trial)
+        if (result.plan === "PRO" &&
+            result.subscriptionExpiry &&
+            result.subscriptionExpiry < now) {
             return res.status(403).json({
                 status: "failed",
                 message: "Subscription expired. Please renew.",

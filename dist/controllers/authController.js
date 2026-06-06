@@ -14,7 +14,6 @@ const authRegister = async (req, res) => {
         const { organizationName, organizationType, location, contact, name, email, password, role, } = req.body;
         // 2. Check if user email already exists
         const user = await prisma_1.default.user.findUnique({ where: { email } });
-        //    - if yes, send error
         if (user) {
             return res
                 .status(409)
@@ -29,6 +28,10 @@ const authRegister = async (req, res) => {
                 organizationType,
                 location,
                 contact,
+                plan: "FREE",
+                subscriptionStatus: "ACTIVE",
+                trialStart: new Date(),
+                trialEnd: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
                 users: {
                     create: {
                         name,
@@ -118,6 +121,8 @@ const getMe = async (req, res) => {
                         plan: true,
                         subscriptionStatus: true,
                         subscriptionExpiry: true,
+                        trialStart: true,
+                        trialEnd: true,
                     },
                 },
             },
@@ -127,8 +132,29 @@ const getMe = async (req, res) => {
                 .status(404)
                 .json({ status: "failed", message: "user not found" });
         }
+        // Calculate trial status with proper type checking
+        const now = new Date();
+        const trialEnd = me.organization.trialEnd;
+        let isTrialActive = false;
+        let daysLeft = 0;
+        if (trialEnd &&
+            trialEnd instanceof Date &&
+            trialEnd.getTime() > now.getTime()) {
+            isTrialActive = true;
+            daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
         const { password: _, ...safeMe } = me;
-        res.status(200).json({ status: "success", data: safeMe });
+        res.status(200).json({
+            status: "success",
+            data: {
+                ...safeMe,
+                trial: {
+                    isActive: isTrialActive,
+                    daysLeft: daysLeft,
+                    endsAt: trialEnd,
+                },
+            },
+        });
     }
     catch (err) {
         return res
