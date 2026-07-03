@@ -15,6 +15,7 @@ import paymentRoutes from "./routes/paymentRoutes";
 import organizationRouter from "./routes/organizationRoutes";
 import creditRouter from "./routes/creditRoutes";
 import contactRouter from "./routes/contactRoutes";
+import statsRouter from "./routes/statsRoutes";
 
 const app = express();
 app.set("trust proxy", 1); // Add this line
@@ -54,5 +55,6 @@ app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/organization", organizationRouter);
 app.use("/api/v1/credits", creditRouter);
 app.use("/api/v1/contact", contactRouter);
+app.use("/stats", statsRouter);
 
 export default app;
