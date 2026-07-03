@@ -13,7 +13,7 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
   try {
     const organizationId = req.user.organizationId;
     const userId = req.user.userId;
-    const { items, amountPaid, paymentMethod, customerPhone } = req.body; // Added customerPhone
+    const { items, amountPaid, paymentMethod, customerPhone } = req.body;
 
     // Step 1: Validate stock for every item
     let totalAmount = 0;
@@ -112,16 +112,16 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
         // Create receipt message with store name
         const message = `${storeName.toUpperCase()}
 
-✅ SALE RECEIPT
+          ✅ SALE RECEIPT
 
-ID: #${sale.id.slice(-8).toUpperCase()}
-Date: ${new Date().toLocaleDateString()}
-Total: GHS ${totalAmount.toFixed(2)}
-Paid: GHS ${amountPaid.toFixed(2)}
-Change: GHS ${change.toFixed(2)}
-Payment: ${paymentMethod}
+          ID: #${sale.id.slice(-8).toUpperCase()}
+          Date: ${new Date().toLocaleDateString()}
+          Total: GHS ${totalAmount.toFixed(2)}
+          Paid: GHS ${amountPaid.toFixed(2)}
+          Change: GHS ${change.toFixed(2)}
+          Payment: ${paymentMethod}
 
-Thank you for shopping with ${storeName}!`;
+          Thank you for shopping with ${storeName}!`;
 
         await smsService.sendSMS(customerPhone, message);
         console.log(`SMS receipt sent to ${customerPhone}`);
