@@ -55,6 +55,6 @@ app.use("/api/v1/payments", paymentRoutes);
 app.use("/api/v1/organization", organizationRouter);
 app.use("/api/v1/credits", creditRouter);
 app.use("/api/v1/contact", contactRouter);
-app.use("/stats", statsRouter);
+app.use("/api/v1/stats", statsRouter);
 
 export default app;
