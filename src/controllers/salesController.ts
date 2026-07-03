@@ -230,6 +230,9 @@ const generateReceipt = async (req: AuthenticatedRequest, res: Response) => {
         organization: {
           select: { organizationName: true, location: true, contact: true },
         },
+        user: {
+          select: { name: true },
+        },
       },
     });
 
@@ -249,6 +252,7 @@ const generateReceipt = async (req: AuthenticatedRequest, res: Response) => {
     const primaryTextColor = "#18181B";
     const secondaryTextColor = "#71717A";
     const accentColor = "#16A34A"; // Green accent for totals
+    const pageBottom = doc.page.height - 50; // bottom margin boundary
 
     // ── HEADER ──────────────────────────────────────────────
     doc
@@ -279,6 +283,10 @@ const generateReceipt = async (req: AuthenticatedRequest, res: Response) => {
         width: 160,
       })
       .text(`Date: ${new Date(sale.createdAt).toLocaleDateString()}`, 400, 85, {
+        align: "right",
+        width: 160,
+      })
+      .text(`Cashier: ${sale.user?.name || "Staff"}`, 400, 98, {
         align: "right",
         width: 160,
       });
@@ -314,6 +322,20 @@ const generateReceipt = async (req: AuthenticatedRequest, res: Response) => {
     doc.fillColor(primaryTextColor);
     for (const item of sale.items) {
       const subtotal = item.quantity * item.priceAtSale;
+
+      // Measure how tall the (possibly wrapping) item name will be
+      // so rows with long product names don't overlap the next row.
+      const nameHeight = doc
+        .font("Helvetica-Bold")
+        .fontSize(10)
+        .heightOfString(item.product.name, { width: 240 });
+      const rowHeight = Math.max(nameHeight, 14) + 8; // padding between rows
+
+      // Page-break guard: start a new page if this row won't fit
+      if (doc.y + rowHeight > pageBottom) {
+        doc.addPage();
+      }
+
       const itemY = doc.y;
 
       doc
@@ -336,7 +358,13 @@ const generateReceipt = async (req: AuthenticatedRequest, res: Response) => {
           align: "right",
         });
 
-      doc.moveDown(1.2);
+      // Advance by the actual measured row height, not a fixed guess
+      doc.y = itemY + rowHeight;
+    }
+
+    // Guard the totals section too — start a fresh page if it won't fit
+    if (doc.y + 150 > pageBottom) {
+      doc.addPage();
     }
 
     // ── TOTALS SECTION ───────────────────────────────────────
