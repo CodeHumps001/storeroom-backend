@@ -19,6 +19,7 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
     let totalAmount = 0;
     const productSnapshots: {
       productId: string;
+      productName: string;
       quantity: number;
       priceAtSale: number;
     }[] = [];
@@ -45,6 +46,7 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
       totalAmount += product.sellingPrice * item.quantity;
       productSnapshots.push({
         productId: product.id,
+        productName: product.name,
         quantity: item.quantity,
         priceAtSale: product.sellingPrice,
       });
@@ -59,7 +61,6 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
 
     // Step 2: Create Sale + SaleItems + decrement stock in one transaction
     const sale = await prisma.$transaction(async (tx) => {
-      // Create the sale
       const change = amountPaid - totalAmount;
       const newSale = await tx.sale.create({
         data: {
@@ -86,7 +87,6 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
         },
       });
 
-      // Decrement stock for each product
       for (const snapshot of productSnapshots) {
         await tx.product.update({
           where: { id: snapshot.productId },
@@ -100,28 +100,54 @@ const createSale = async (req: AuthenticatedRequest, res: Response) => {
     // Send SMS receipt if customer phone was provided
     if (customerPhone) {
       try {
-        // Get organization name
-        const organization = await prisma.organization.findUnique({
-          where: { id: organizationId },
-          select: { organizationName: true },
+        const [organization, cashier] = await Promise.all([
+          prisma.organization.findUnique({
+            where: { id: organizationId },
+            select: { organizationName: true, location: true, contact: true },
+          }),
+          prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true },
+          }),
+        ]);
+
+        const storeName = (
+          organization?.organizationName || "Our Store"
+        ).toUpperCase();
+        const change = amountPaid - totalAmount;
+        const cashierName = cashier?.name || "Staff";
+
+        const itemLines = productSnapshots.map((s) => {
+          const lineTotal = (s.priceAtSale * s.quantity).toFixed(2);
+          return `${s.quantity}x ${s.productName} - GHS ${lineTotal}`;
         });
 
-        const storeName = organization?.organizationName || "Our Store";
-        const change = amountPaid - totalAmount;
+        const messageLines = [
+          storeName,
+          "SALE RECEIPT",
+          "------------------------------",
+          `Receipt #: ${sale.id.slice(-8).toUpperCase()}`,
+          `Date: ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}`,
+          `Cashier: ${cashierName}`,
+          "------------------------------",
+          ...itemLines,
+          "------------------------------",
+          `Total: GHS ${totalAmount.toFixed(2)}`,
+          `Paid: GHS ${amountPaid.toFixed(2)} (${paymentMethod})`,
+          `Change: GHS ${change.toFixed(2)}`,
+          "------------------------------",
+          `Thank you for shopping with ${organization?.organizationName || "us"}!`,
+        ];
 
-        // Create receipt message with store name
-        const message = `${storeName.toUpperCase()}
+        if (organization?.location || organization?.contact) {
+          messageLines.push(
+            [organization?.location, organization?.contact]
+              .filter(Boolean)
+              .join(" | "),
+          );
+        }
 
-          ✅ SALE RECEIPT
-
-          ID: #${sale.id.slice(-8).toUpperCase()}
-          Date: ${new Date().toLocaleDateString()}
-          Total: GHS ${totalAmount.toFixed(2)}
-          Paid: GHS ${amountPaid.toFixed(2)}
-          Change: GHS ${change.toFixed(2)}
-          Payment: ${paymentMethod}
-
-          Thank you for shopping with ${storeName}!`;
+        const message = messageLines.join("\n");
 
         await smsService.sendSMS(customerPhone, message);
         console.log(`SMS receipt sent to ${customerPhone}`);
