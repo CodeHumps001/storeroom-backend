@@ -3,6 +3,7 @@ import productController from "../controllers/productController";
 import { authMIddleware } from "../middleware/authMiddleware";
 import restrictTo from "../middleware/restrict";
 import { upload } from "../lib/cloudinary";
+import bulkController from "../controllers/productBulkController";
 const router = express.Router();
 
 router.post(
@@ -13,6 +14,8 @@ router.post(
   productController.createProduct,
 );
 router.get("/", authMIddleware, productController.getProducts);
+
+router.patch("/bulk", authMIddleware, restrictTo("OWNER"), bulkController.bulkUpdateProducts);
 router.get("/:id", authMIddleware, productController.getProduct);
 router.patch(
   "/:id",
