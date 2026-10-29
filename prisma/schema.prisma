@@ -59,6 +59,22 @@ enum PaymentMethod {
 }
 
 
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+}
+
+enum DiscountScope {
+  CART       // whole basket
+  PRODUCT    // only specific products
+  CATEGORY   // only specific categories
+}
+
+enum DiscountSource {
+  COUPON
+  MANUAL
+}
+
 
 model Organization{
   id  String @id @default(uuid())
@@ -66,18 +82,23 @@ model Organization{
   organizationType OrganizationType
   location String
   contact String
+  maxCashierDiscountPercent Float    @default(10) 
   plan               Plan               @default(FREE)
   subscriptionStatus SubscriptionStatus @default(INACTIVE)
   subscriptionExpiry DateTime?
   paystackCustomerId String?
    trialStart    DateTime?
+
   trialEnd      DateTime?
   createdAt  DateTime @default(now())
+
 
   users User[]
   products Product[]
   categories Category[]
   credits Credit[]
+  coupons Coupon[]
+  vouchers Voucher[]
   
   sales Sale[]
 }
@@ -145,7 +166,14 @@ model Sale{
   amountPaid    Float?
   paymentMethod PaymentMethod?
   change       Float? 
-
+  subtotal       Float?
+  discountAmount Float           @default(0)
+  discountSource DiscountSource?
+  discountNote   String? 
+  couponCode     String? 
+  voucherId      String?
+  couponId       String?
+  coupon         Coupon?  @relation(fields: [couponId], references: [id])
   organizationId String
   organization   Organization @relation(fields: [organizationId], references: [id])
   userId String
@@ -157,6 +185,7 @@ model SaleItem{
   id String @id @default(uuid())
   quantity Int
   priceAtSale Float
+  discountAmount Float @default(0)
   
   createdAt DateTime @default(now())
 
@@ -179,4 +208,57 @@ model Credit {
   organization   Organization @relation(fields: [organizationId], references: [id])
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
+}
+
+
+model Coupon {
+  id                String        @id @default(uuid())
+  code              String
+  description       String?
+  type              DiscountType
+  value             Float                       // percent (0-100) or GHS amount
+  maxDiscountAmount Float?                      // cap for percentage coupons
+  minPurchaseAmount Float?                      // basket subtotal must reach this
+  scope             DiscountScope @default(CART)
+  productIds        String[]                    // used when scope = PRODUCT
+  categoryIds       String[]                    // used when scope = CATEGORY
+  startsAt          DateTime?
+  expiresAt         DateTime?
+  usageLimit        Int?                        // total redemptions allowed
+  usedCount         Int           @default(0)
+  isActive          Boolean       @default(true)
+
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  sales          Sale[]
+  vouchers Voucher[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([organizationId, code])
+  @@index([organizationId])
+}
+
+
+model Voucher {
+  id             String    @id @default(uuid())
+  code           String    @unique        // 8 chars, no look-alikes; shown as XXXX-XXXX
+  phone          String?
+  customerName   String?
+  expiresAt      DateTime?                // the coupon's own end date can still cut it shorter
+  redeemedAt     DateTime?
+  redeemedSaleId String?
+  smsSentAt      DateTime?
+  smsError       String?
+
+  couponId       String
+  coupon         Coupon       @relation(fields: [couponId], references: [id])
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId])
+  @@index([phone])
 }
