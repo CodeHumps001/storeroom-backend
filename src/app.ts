@@ -18,6 +18,8 @@ import contactRouter from "./routes/contactRoutes";
 import statsRouter from "./routes/statsRoutes";
 import scanRouter from "./routes/scanRoutes";
 import couponRouter from "./routes/couponRoutes";
+import voucherRouter from "./routes/voucherRoutes";
+import publicRouter from "./routes/publicRoutes";
 
 const app = express();
 app.set("trust proxy", 1); // Add this line
@@ -60,7 +62,8 @@ app.use("/api/v1/contact", contactRouter);
 app.use("/api/v1/stats", statsRouter);
 app.use("/api/v1/scan", scanRouter);
 app.use("/api/v1/coupons", couponRouter);
-
+app.use("/api/v1/vouchers", voucherRouter);
+app.use("/api/v1/public", publicRouter);
 
 
 
